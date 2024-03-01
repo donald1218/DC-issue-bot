@@ -39,7 +39,7 @@ async def remove_manager(ctx, user: discord.Member):
         await ctx.send(f'{user.display_name}  was removed from administrators.')
 
 
-@tasks.loop(minutes=1)  
+@tasks.loop(hours=24)  
 async def check_github_for_updates():
     global lasttime
     channel = bot.get_channel(channak_ID)
