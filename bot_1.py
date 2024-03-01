@@ -29,7 +29,14 @@ async def add_manager(ctx, user: discord.Member):
         await ctx.send(f'{user.display_name} has been recorded as an administrator.')
     else:
         await ctx.send(f'{user.display_name}  is already an administrator.')
-        
+
+@bot.command()
+async def remove_manager(ctx, user: discord.Member):
+    if user not in manager:
+        await ctx.send(f'{user.display_name} is not an administrator.')
+    else:
+        manager.remove(user)
+        await ctx.send(f'{user.display_name}  was removed from administrators.')
 
 
 @tasks.loop(minutes=1)  
