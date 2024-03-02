@@ -8,6 +8,8 @@ intents = discord.Intents.all()
 # command_prefix是前綴符號，可以自由選擇($, #, &...)
 bot = commands.Bot(command_prefix = "%", intents = intents)
 
+
+
 @bot.event
 # 當機器人完成啟動
 async def on_ready():
@@ -15,8 +17,11 @@ async def on_ready():
 
 @bot.command()
 # 輸入%Hello呼叫指令
-async def Hello(ctx):
-    # 回覆Hello, world!
-    await ctx.send("Hello, world!")
+async def setting(ctx, user: discord.Member):
+    # 替换 CHANNEL_ID 为你想要标记的频道 ID
+    channel = bot.get_channel()
+    if channel:
+        await channel.send(f'{user.mention}, 你被标记了！')
+        
 
 bot.run("")
