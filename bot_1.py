@@ -11,9 +11,9 @@ DISCORD_TOKEN = ""
 username = ""
 g = Github()
 user = g.get_user(username)
-channak_ID = 0
+channel_ID = 0
 
-lasttime = datetime.datetime(2024,1,1,0,0,0, tzinfo=datetime.timezone.utc)
+lasttime = datetime.datetime.now(tz=datetime.timezone.utc)
 
 manager= []
 
@@ -36,28 +36,41 @@ async def remove_manager(ctx, user: discord.Member):
         await ctx.send(f'{user.display_name} is not an administrator.')
     else:
         manager.remove(user)
-        await ctx.send(f'{user.display_name}  was removed from administrators.')
+        await ctx.send(f'{user.display_name}  was removed from administrators.')        
 
 
-@tasks.loop(hours=24)  
+@tasks.loop(datetime.time(hour = 12,minute=0))  
+async def check_github_for_new():
+    channel = bot.get_channel(channel_ID)
+    yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
+    if manager:
+        try:
+            repo = user.get_repo("free5gc")
+            issues = repo.get_issues(state='open',since=yesterday)
+            for issue in issues:
+                if(issue.created_at>yesterday):
+                    message = ', '.join([admin.mention for admin in manager])
+                    await channel.send(f'{message} new issue : '+ issue.title)
+        except Exception as e:
+            print(f'Error occurred while checking GitHub for updates: {e}')
+
+    else:
+        await channel.send('There are currently no recorded administrators。')
+
+@tasks.loop(datetime.time(hour = 12,minute=1))  
 async def check_github_for_updates():
-    global lasttime
-    channel = bot.get_channel(channak_ID)
+    yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
+    channel = bot.get_channel(channel_ID)
     if manager:
         try:
             repo = user.get_repo("free5gc")
             issues = repo.get_issues(state='open',since=lasttime)
-            issues = issues[:issues.totalCount-1]
             for issue in issues:
-                print(issue.title,issue.updated_at)
-                message = ', '.join([admin.mention for admin in manager])
-                await channel.send(f'{message} new issue : '+ issue.title)
-                if(issue.updated_at>lasttime):
-                    lasttime = issue.updated_at
-
+                if(issue.created_at<yesterday):
+                    message = ', '.join([admin.mention for admin in manager])
+                    await channel.send(f'{message} issue update : '+ issue.title)
         except Exception as e:
             print(f'Error occurred while checking GitHub for updates: {e}')
-
     else:
         await channel.send('There are currently no recorded administrators。')
 
