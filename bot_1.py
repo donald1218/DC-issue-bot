@@ -63,7 +63,7 @@ async def assign(ctx, user: discord.Member,*, message: str):
     if channel:
         await channel.send(f'{message} is assigned to {issue_with_user[message].mention}')   
 
-@tasks.loop(time=datetime.time(hour = 4,minute=30)
+@tasks.loop(time=datetime.time(hour = 4,minute=30))
 async def check_github_for_new():
     channel = bot.get_channel(channel_ID)
     yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
