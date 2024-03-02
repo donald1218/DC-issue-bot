@@ -5,7 +5,7 @@ import datetime
 import json
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='%',intents = intents)
+bot = commands.Bot(command_prefix='!',intents = intents)
 
 
 
@@ -62,8 +62,7 @@ async def assign(ctx, user: discord.Member,*, message: str):
     if channel:
         await channel.send(f'{message} is assigned to {issue_with_user[message].mention}')   
 
-# @tasks.loop(time=datetime.time(hour = 12,minute=0))  
-@tasks.loop(minutes=1)
+@tasks.loop(time=datetime.time(hour = 4,minute=30))  
 async def check_github_for_new():
     channel = bot.get_channel(channel_ID)
     yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
@@ -79,13 +78,11 @@ async def check_github_for_new():
             print(f'Error occurred while checking GitHub for updates: {e}')
 
 
-# @tasks.loop(time=datetime.time(hour = 12,minute=1))  
-@tasks.loop(minutes=1)
+@tasks.loop(time=datetime.time(hour = 4,minute=31))  
 async def check_github_for_updates():
-    yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(minutes=1)
+    yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
     channel = bot.get_channel(channel_ID)
     if channel:
-        await channel.send(f'{issue_with_user} ')
         try:
             repo = user.get_repo(repo_name)
             issues = repo.get_issues(state='open',since=yesterday)
@@ -93,8 +90,6 @@ async def check_github_for_updates():
                 if(issue.created_at<yesterday):
                     if(issue.title in issue_with_user):
                         await channel.send(f'{issue_with_user[issue.title].mention} '+issue.title+' is update ')
-                    else:
-                        await channel.send(f'test 6 ')
         except Exception as e:
             print(f'Error occurred while checking GitHub for updates: {e}')
 
