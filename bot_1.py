@@ -34,6 +34,7 @@ async def on_ready():
     print(f'Logged in as {bot.user.name}')
     check_github_for_updates.start()
     check_github_for_new.start()
+    check_github_for_closed.start()
 
 @bot.command()
 async def add_manager(ctx, user: discord.Member):
@@ -62,7 +63,7 @@ async def assign(ctx, user: discord.Member,*, message: str):
     if channel:
         await channel.send(f'{message} is assigned to {issue_with_user[message].mention}')   
 
-@tasks.loop(time=datetime.time(hour = 4,minute=30))  
+@tasks.loop(time=datetime.time(hour = 4,minute=30)
 async def check_github_for_new():
     channel = bot.get_channel(channel_ID)
     yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
@@ -74,6 +75,8 @@ async def check_github_for_new():
                 if(issue.created_at>yesterday):
                     message = ', '.join([admin.mention for admin in manager])
                     await channel.send(f'{message} new issue : '+ issue.title)
+                    await channel.send(issue.html_url)
+                    
         except Exception as e:
             print(f'Error occurred while checking GitHub for updates: {e}')
 
@@ -93,6 +96,18 @@ async def check_github_for_updates():
         except Exception as e:
             print(f'Error occurred while checking GitHub for updates: {e}')
 
+@tasks.loop(time=datetime.time(hour = 4,minute=0))  
+async def check_github_for_closed():
+    try:
+        repo = user.get_repo(repo_name)
+        issues = repo.get_issues(state='open')
+        for issue in issue_with_user:
+                if(issue not in issues):
+                    del issue_with_user[issue]
+
+    except Exception as e:
+        print(f'Error occurred while checking GitHub for updates: {e}')
+
 
 @check_github_for_updates.before_loop
 async def before_check_github_for_updates():
@@ -101,6 +116,11 @@ async def before_check_github_for_updates():
 @check_github_for_new.before_loop
 async def before_check_github_for_new():
     await bot.wait_until_ready()
+
+@check_github_for_closed.before_loop
+async def before_check_github_for_closed():
+    await bot.wait_until_ready()
+
 
 bot.run(DC_token)
 
