@@ -5,22 +5,29 @@ import datetime
 import json
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!',intents = intents)
+bot = commands.Bot(command_prefix='%',intents = intents)
+
 
 
 username = ""
-g = Github()
-user = g.get_user(username)
-
 DC_token = ""
 channel_ID = 0
+repo_name =""
+
+manager= []
+issue_with_user = {}
 
 with open("secrets.json") as f:
     data = json.load(f)
     DC_token = data['dc-token']
     channel_ID = data['channel_ID']
+    username = data['user_name']
+    repo_name = data['repo_name']
 
-manager= []
+g = Github()
+user = g.get_user(username)
+
+
 
 @bot.event
 async def on_ready():
@@ -30,29 +37,39 @@ async def on_ready():
 
 @bot.command()
 async def add_manager(ctx, user: discord.Member):
-    if user not in manager:
-        manager.append(user)
-        await ctx.send(f'{user.display_name} has been recorded as an administrator.')
-    else:
-        await ctx.send(f'{user.display_name}  is already an administrator.')
+    channel = bot.get_channel(channel_ID)
+    if channel:
+        if user not in manager:
+            manager.append(user)
+            await channel.send(f'{user.display_name} has been recorded as an administrator.')
+        else:
+            await channel.send(f'{user.display_name}  is already an administrator.')
 
 @bot.command()
 async def remove_manager(ctx, user: discord.Member):
-    if user not in manager:
-        await ctx.send(f'{user.display_name} is not an administrator.')
-    else:
-        manager.remove(user)
-        await ctx.send(f'{user.display_name}  was removed from administrators.')        
+    channel = bot.get_channel(channel_ID)
+    if channel:
+        if user not in manager:
+            await channel.send(f'{user.display_name} is not an administrator.')
+        else:
+            manager.remove(user)
+            await channel.send(f'{user.display_name}  was removed from administrators.')        
 
+@bot.command()
+async def assign(ctx, user: discord.Member,*, message: str):
+    issue_with_user[message]=user
+    channel = bot.get_channel(channel_ID)
+    if channel:
+        await channel.send(f'{message} is assigned to {issue_with_user[message].mention}')   
 
-@tasks.loop(datetime.time(hour = 12,minute=0))  
+# @tasks.loop(time=datetime.time(hour = 12,minute=0))  
+@tasks.loop(minutes=1)
 async def check_github_for_new():
-    global channel_ID
     channel = bot.get_channel(channel_ID)
     yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
     if manager:
         try:
-            repo = user.get_repo("free5gc")
+            repo = user.get_repo(repo_name)
             issues = repo.get_issues(state='open',since=yesterday)
             for issue in issues:
                 if(issue.created_at>yesterday):
@@ -61,26 +78,25 @@ async def check_github_for_new():
         except Exception as e:
             print(f'Error occurred while checking GitHub for updates: {e}')
 
-    else:
-        await channel.send('There are currently no recorded administrators。')
 
-@tasks.loop(datetime.time(hour = 12,minute=1))  
+# @tasks.loop(time=datetime.time(hour = 12,minute=1))  
+@tasks.loop(minutes=1)
 async def check_github_for_updates():
-    global channel_ID
-    yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
+    yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(minutes=1)
     channel = bot.get_channel(channel_ID)
-    if manager:
+    if channel:
+        await channel.send(f'{issue_with_user} ')
         try:
-            repo = user.get_repo("free5gc")
+            repo = user.get_repo(repo_name)
             issues = repo.get_issues(state='open',since=yesterday)
             for issue in issues:
                 if(issue.created_at<yesterday):
-                    message = ', '.join([admin.mention for admin in manager])
-                    await channel.send(f'{message} issue update : '+ issue.title)
+                    if(issue.title in issue_with_user):
+                        await channel.send(f'{issue_with_user[issue.title].mention} '+issue.title+' is update ')
+                    else:
+                        await channel.send(f'test 6 ')
         except Exception as e:
             print(f'Error occurred while checking GitHub for updates: {e}')
-    else:
-        await channel.send('There are currently no recorded administrators。')
 
 
 @check_github_for_updates.before_loop
