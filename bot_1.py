@@ -26,6 +26,7 @@ manager= []
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
     check_github_for_updates.start()
+    check_github_for_new.start()
 
 @bot.command()
 async def add_manager(ctx, user: discord.Member):
@@ -84,6 +85,10 @@ async def check_github_for_updates():
 
 @check_github_for_updates.before_loop
 async def before_check_github_for_updates():
+    await bot.wait_until_ready()
+
+@check_github_for_new.before_loop
+async def before_check_github_for_new():
     await bot.wait_until_ready()
 
 bot.run(DC_token)

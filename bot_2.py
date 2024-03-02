@@ -1,7 +1,7 @@
 # 導入Discord.py模組
 import discord
 # 導入commands指令模組
-from discord.ext import commands
+from discord.ext import commands,tasks
 import json
 
 DC_token = ""
@@ -18,12 +18,14 @@ intents = discord.Intents.all()
 # command_prefix是前綴符號，可以自由選擇($, #, &...)
 bot = commands.Bot(command_prefix = "%", intents = intents)
 
-
+user = []
 
 @bot.event
 # 當機器人完成啟動
 async def on_ready():
     print(f"目前登入身份 --> {bot.user}")
+    test1.start()
+    test2.start()
 
 @bot.command()
 # 輸入%Hello呼叫指令
@@ -33,6 +35,34 @@ async def setting(ctx, user: discord.Member):
     channel = bot.get_channel(channel_ID)
     if channel:
         await channel.send(f'{user.mention}, 你被标记了！')
-        
+
+@bot.command()
+async def assign(ctx, user: discord.Member,*, message: str):
+    # 替换 CHANNEL_ID 为你想要标记的频道 ID
+    channel = bot.get_channel(channel_ID)
+    if channel:
+        await channel.send(f'{user.mention}, {message}')   
+
+@tasks.loop(seconds=30)  
+async def test1():
+    channel = bot.get_channel(channel_ID)
+    print('test1')
+    if channel:
+        await channel.send(f'test1') 
+
+@tasks.loop(seconds=15)  
+async def test2():
+    channel = bot.get_channel(channel_ID)
+    print('test2')
+    if channel:
+        await channel.send(f'test2') 
+
+@test1.before_loop
+async def before_test1():
+    await bot.wait_until_ready()    
+
+@test2.before_loop
+async def before_test2():
+    await bot.wait_until_ready() 
 
 bot.run(DC_token)
