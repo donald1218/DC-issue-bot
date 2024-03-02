@@ -2,18 +2,23 @@ import discord
 from discord.ext import commands,tasks
 from github import Github
 import datetime
+import json
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!',intents = intents)
 
-DISCORD_TOKEN = ""
 
 username = ""
 g = Github()
 user = g.get_user(username)
+
+DC_token = ""
 channel_ID = 0
 
-lasttime = datetime.datetime.now(tz=datetime.timezone.utc)
+with open("secrets.json") as f:
+    data = json.load(f)
+    DC_token = data['dc-token']
+    channel_ID = data['channel_ID']
 
 manager= []
 
@@ -41,6 +46,7 @@ async def remove_manager(ctx, user: discord.Member):
 
 @tasks.loop(datetime.time(hour = 12,minute=0))  
 async def check_github_for_new():
+    global channel_ID
     channel = bot.get_channel(channel_ID)
     yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
     if manager:
@@ -59,12 +65,13 @@ async def check_github_for_new():
 
 @tasks.loop(datetime.time(hour = 12,minute=1))  
 async def check_github_for_updates():
+    global channel_ID
     yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
     channel = bot.get_channel(channel_ID)
     if manager:
         try:
             repo = user.get_repo("free5gc")
-            issues = repo.get_issues(state='open',since=lasttime)
+            issues = repo.get_issues(state='open',since=yesterday)
             for issue in issues:
                 if(issue.created_at<yesterday):
                     message = ', '.join([admin.mention for admin in manager])
@@ -79,6 +86,6 @@ async def check_github_for_updates():
 async def before_check_github_for_updates():
     await bot.wait_until_ready()
 
-bot.run(DISCORD_TOKEN)
+bot.run(DC_token)
 
 
