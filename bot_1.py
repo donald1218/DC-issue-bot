@@ -5,7 +5,7 @@ import datetime
 import json
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!',intents = intents)
+bot = commands.Bot(command_prefix='%',intents = intents)
 
 
 
@@ -103,14 +103,13 @@ async def check_github_for_new():
 @tasks.loop(time=datetime.time(hour = 4,minute=31)) 
 async def check_github_for_updates():
     yesterday = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=1)
-    td = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(minutes=1)
     channel = bot.get_channel(channel_ID)
     if channel:
         try:
             repo = user.get_repo(repo_name)
             issues = repo.get_issues(state='open',since=yesterday)
             for issue in issues:
-                if(issue.created_at<td):
+                if(issue.created_at<yesterday):
                     for key in issue_with_user:
                         if(int(key) == issue.number):
                             users = channel.members
